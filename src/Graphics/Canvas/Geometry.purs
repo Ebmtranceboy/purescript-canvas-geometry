@@ -389,7 +389,8 @@ instance drawableArc :: DrawableSet Arc where
                            ,{x: abs at1, y: ord at1}] 
               ) asOriented)) <>
                 (let u = scale (radius/length origin) origin
-                     i = center <+| scale 0.8 (u <+| v)
+                     uv = u <+| v
+                     i = center <+| scale (0.8/length uv) (u <+| v)
                  in maybe mempty (\str -> text (font fantasy 25 mempty) 
                      (abs i) 
                      (ord i) 
