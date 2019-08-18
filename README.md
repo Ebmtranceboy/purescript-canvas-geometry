@@ -21,8 +21,9 @@ import Effect (Effect)
 import Data.Maybe(Maybe(..))
 import Partial.Unsafe(unsafePartial)
 import Graphics.Canvas (CanvasElement, getCanvasElementById, getContext2D)
+import Graphics.Drawing(render)
 import Color (rgb)
-import Graphics.Geometry (class DrawableSet, arc, circle, drawIn
+import Graphics.Canvas.Geometry (class DrawableSet, arc, circle, drawIn
                          , halfline, length, line, meets, middle
                          , normalTo, point, rename, rightangle
                          , segment, vector)
@@ -40,11 +41,10 @@ main = void $ unsafePartial do
   _ <- setAttribute "height" "600" canvas
   context2D <- getContext2D canvas
   
-  let ctx = { context2D
-            , color: rgb 195 194 199
+  let ctx = { color: rgb 195 194 199
             , lineWidth: 1.50}
   let draw :: forall a. DrawableSet a => a -> Effect Unit
-      draw = drawIn ctx 
+      draw = render context2D <<< drawIn ctx 
   
   let a = point "A" 310.0 320.0
   let b = point "B" 100.0 210.0
@@ -64,7 +64,7 @@ main = void $ unsafePartial do
   draw i
   let [f] = (rename "F") <$> c `meets` (halfline a (vector b a))
   draw f
-  drawIn ctx{lineWidth = 5.0} $ segment i f $ Just "u"
+  render context2D <<< drawIn ctx{lineWidth = 5.0} $ segment i f $ Just "u"
   -- Two boolean parameters to adjust the arrow tip:
   let orientedArc = arc (vector i f) i (vector i b) 50.0 
                         false false $ Just "α"
@@ -82,9 +82,8 @@ main = void $ unsafePartial do
                               (segment e f Nothing)
   draw j
   -- Draw arrow tip but no vector name:
-  drawIn ctx{lineWidth = 0.5} $ segment i j $ Just ""
+  render context2D <<< drawIn ctx{lineWidth = 0.5} $ segment i j $ Just ""
   pure unit
-  
 ```
 along with these exports:
 

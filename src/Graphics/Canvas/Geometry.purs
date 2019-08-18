@@ -1,15 +1,13 @@
 module Graphics.Canvas.Geometry(module Graphics.Canvas.Geometry) where
 
 import Prelude
-import Effect (Effect)
 import Data.Array(filter)
 import Data.Maybe(Maybe(..),maybe)
 import Data.Foldable(foldr)
 import Data.Sparse.Polynomial(Polynomial,(^),(?))
-import Graphics.Canvas (Context2D)
-import Graphics.Drawing ( closed, fillColor, filled
+import Graphics.Drawing ( Drawing, closed, fillColor, filled
                         , lineWidth, outlineColor, outlined
-                        , path, render, text)
+                        , path, text)
 import Graphics.Drawing (circle, arc) as Drawing
 import Graphics.Drawing.Font (fantasy, font)
 import Color (Color)
@@ -278,16 +276,15 @@ instance interSegmentSegment :: Intersectable Segment Segment where
                    (vector extremity origin) >= 0.0) $ hl `meets` s
   
 type Context = 
-   { context2D :: Context2D
-   , color :: Color
+   { color :: Color
    , lineWidth :: Number}
 
 class DrawableSet a where
-  drawIn :: Context -> a -> Effect Unit
+  drawIn :: Context -> a -> Drawing
   
 instance drawablePoint :: DrawableSet Point where
-  drawIn {context2D, color, lineWidth: lW} 
-           p@(Point {name, coordinates}) = render context2D $ 
+  drawIn {color, lineWidth: lW} 
+           p@(Point {name, coordinates}) = 
     (outlined (outlineColor color <> lineWidth lW) $ 
       path [{x: abs p - 5.0, y: ord p - 5.0}
            ,{x: abs p + 5.0, y: ord p + 5.0}]) <>
@@ -301,11 +298,10 @@ instance drawablePoint :: DrawableSet Point where
               name)
 
 instance drawableHalfLine :: DrawableSet HalfLine where
-  drawIn {context2D, color, lineWidth: lW} 
+  drawIn {color, lineWidth: lW} 
            (HalfLine {origin, direction}) = 
     let far = origin <+| scale 10.0 direction
-    in render context2D $ 
-              outlined (outlineColor color <> lineWidth lW) $
+    in outlined (outlineColor color <> lineWidth lW) $
                 path [{x: abs origin, y: ord origin}
                      ,{x: abs far, y: ord far}]
 
@@ -331,9 +327,9 @@ arrowTip s@(Segment {origin, extremity, asOriented}) =
       , at2: f (pi + arrowBluntness)}
       
 instance drawableSegment :: DrawableSet Segment where
-  drawIn {context2D, color, lineWidth: lW} 
+  drawIn {color, lineWidth: lW} 
            s@(Segment {origin,extremity,asOriented}) = 
-    render context2D $ (outlined (outlineColor color <> lineWidth lW) $
+    (outlined (outlineColor color <> lineWidth lW) $
       path [{x: abs origin, y: ord origin}
            ,{x: abs extremity, y: ord extremity}]) <>
         (filled (fillColor color) (maybe mempty (\str -> 
@@ -356,13 +352,13 @@ instance drawableSegment :: DrawableSet Segment where
           asOriented)
 
 instance drawableCircle :: DrawableSet Circle where
-  drawIn {context2D, color, lineWidth: lW} 
+  drawIn {color, lineWidth: lW} 
            (Circle{center: c,radius}) =
-    render context2D $ outlined (outlineColor color <> lineWidth lW) $
+    outlined (outlineColor color <> lineWidth lW) $
       Drawing.circle (abs c) (ord c) radius
 
 instance drawableArc :: DrawableSet Arc where
-  drawIn {context2D, color, lineWidth: lW} 
+  drawIn {color, lineWidth: lW} 
          (Arc {origin,center,extremity,radius
               ,flipped,swapped, asOriented}) = 
     let start = 
@@ -372,8 +368,7 @@ instance drawableArc :: DrawableSet Arc where
         end = 
             if swapped then (atan2 (ord origin) (abs origin))
             else (atan2 (ord extremity) (abs extremity))
-       in render context2D $ 
-         (outlined (outlineColor color <> lineWidth lW) $ 
+       in (outlined (outlineColor color <> lineWidth lW) $ 
            Drawing.arc (abs center) (ord center)  start end radius) <>
                (let v = scale (radius/length extremity) extremity
                     m = center <+| v
@@ -398,7 +393,7 @@ instance drawableArc :: DrawableSet Arc where
                      str) asOriented))
 
 instance drawRightAngle :: DrawableSet RightAngle where
-  drawIn {context2D, color, lineWidth: lW} 
+  drawIn {color, lineWidth: lW} 
          (RightAngle {origin, center,extremity,radius}) = 
     let v = scale (radius/length extremity) extremity
         w = scale (radius/length extremity) origin
@@ -406,8 +401,7 @@ instance drawRightAngle :: DrawableSet RightAngle where
         m = center <+| u
         n = center <+| v
         o = center <+| w
-       in render context2D $ 
-         (outlined (outlineColor color <> lineWidth lW) $ 
+       in (outlined (outlineColor color <> lineWidth lW) $ 
            path [{x: abs o,y: ord o}
                 ,{x: abs m,y: ord m}
                 ,{x: abs n,y:ord n}])
